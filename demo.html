@@ -1,0 +1,33 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>storm-heatmap.js demo</title>
+<style>
+  body { background: #0d1630; color: #e8f4f3; font: 14px system-ui, sans-serif; margin: 24px; }
+  #storm { width: 768px; max-width: 100%; border: 2px solid #e8f4f3; margin-bottom: 12px; }
+  button, select, input { font: inherit; padding: 6px 10px; margin-right: 8px; }
+  input { width: 5em; }
+</style>
+<p>demo: <code>storm-heatmap.js</code>, anomaly = pressing the "TXT" button</p>
+<div id="storm"></div>
+<select id="type">
+  <option value="0">Thunderstorm</option><option value="1">Supercell</option><option value="2">Squall line</option>
+  <option value="3" selected>Hurricane</option><option value="4">Blizzard</option><option value="5">Dust storm</option>
+</select>
+<label>song length <input id="duration" type="number" value="150" min="10"> s</label>
+<button id="restart">Restart</button>
+<button id="txt">TXT</button>
+<span id="info"></span>
+<script src="storm-heatmap.js"></script>
+<script>
+// Everything needed to put the animation in a div. duration = the song's length in seconds.
+const storm = StormHeatmap.mount('#storm', {
+  type: 3,
+  duration: 150,
+  onFrame: (p, phase, type, sec) => { document.getElementById('info').textContent = phase + ' · ' + Math.round(sec) + 's / ' + storm.getDuration() + 's'; },
+  onEnd: () => { document.getElementById('info').textContent += ' · ended'; }
+});
+document.getElementById('txt').onclick = () => storm.anomaly();
+document.getElementById('type').onchange = e => storm.setType(+e.target.value);
+document.getElementById('duration').onchange = e => storm.setDuration(+e.target.value);
+document.getElementById('restart').onclick = () => storm.restart();
+</script>

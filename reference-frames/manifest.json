@@ -1,0 +1,214 @@
+[
+  {
+    "file": "thunderstorm_seed7_time2.2_life0.50.png",
+    "state": {
+      "type": 0,
+      "seed": 7,
+      "time": 2.2,
+      "life": 0.5
+    },
+    "cellIndexChecksum": 1375794551
+  },
+  {
+    "file": "supercell_seed7_time2.2_life0.50.png",
+    "state": {
+      "type": 1,
+      "seed": 7,
+      "time": 2.2,
+      "life": 0.5
+    },
+    "cellIndexChecksum": 2512173111
+  },
+  {
+    "file": "squall-line_seed7_time2.2_life0.50.png",
+    "state": {
+      "type": 2,
+      "seed": 7,
+      "time": 2.2,
+      "life": 0.5
+    },
+    "cellIndexChecksum": 3572959024
+  },
+  {
+    "file": "hurricane_seed7_time2.2_life0.50.png",
+    "state": {
+      "type": 3,
+      "seed": 7,
+      "time": 2.2,
+      "life": 0.5
+    },
+    "cellIndexChecksum": 2127296458
+  },
+  {
+    "file": "blizzard_seed7_time2.2_life0.50.png",
+    "state": {
+      "type": 4,
+      "seed": 7,
+      "time": 2.2,
+      "life": 0.5
+    },
+    "cellIndexChecksum": 4109123220
+  },
+  {
+    "file": "dust-storm_seed7_time2.2_life0.50.png",
+    "state": {
+      "type": 5,
+      "seed": 7,
+      "time": 2.2,
+      "life": 0.5
+    },
+    "cellIndexChecksum": 3697964143
+  },
+  {
+    "file": "hurricane_seed7_life0.10.png",
+    "state": {
+      "type": 3,
+      "seed": 7,
+      "time": 7.45,
+      "life": 0.1
+    },
+    "cellIndexChecksum": 3112304944
+  },
+  {
+    "file": "hurricane_seed7_life0.30.png",
+    "state": {
+      "type": 3,
+      "seed": 7,
+      "time": 17.95,
+      "life": 0.3
+    },
+    "cellIndexChecksum": 3067435946
+  },
+  {
+    "file": "hurricane_seed7_life0.60.png",
+    "state": {
+      "type": 3,
+      "seed": 7,
+      "time": 33.699999999999996,
+      "life": 0.6
+    },
+    "cellIndexChecksum": 2740253001
+  },
+  {
+    "file": "hurricane_seed7_life0.68.png",
+    "state": {
+      "type": 3,
+      "seed": 7,
+      "time": 37.900000000000006,
+      "life": 0.68
+    },
+    "cellIndexChecksum": 2154973764
+  },
+  {
+    "file": "hurricane_seed7_life0.90.png",
+    "state": {
+      "type": 3,
+      "seed": 7,
+      "time": 49.45,
+      "life": 0.9
+    },
+    "cellIndexChecksum": 599689649
+  },
+  {
+    "file": "hurricane_anomaly_t0.10.png",
+    "state": {
+      "type": 3,
+      "seed": 7,
+      "time": 2.2,
+      "life": 0.5,
+      "anomaly": {
+        "elapsed": 0.1,
+        "epicenter": [
+          0.7,
+          0.48
+        ]
+      }
+    },
+    "cellIndexChecksum": 2248551657
+  },
+  {
+    "file": "hurricane_anomaly_t0.40.png",
+    "state": {
+      "type": 3,
+      "seed": 7,
+      "time": 2.2,
+      "life": 0.5,
+      "anomaly": {
+        "elapsed": 0.4,
+        "epicenter": [
+          0.7,
+          0.48
+        ]
+      }
+    },
+    "cellIndexChecksum": 3666692829
+  },
+  {
+    "file": "hurricane_anomaly_t0.80.png",
+    "state": {
+      "type": 3,
+      "seed": 7,
+      "time": 2.2,
+      "life": 0.5,
+      "anomaly": {
+        "elapsed": 0.8,
+        "epicenter": [
+          0.7,
+          0.48
+        ]
+      }
+    },
+    "cellIndexChecksum": 2443051393
+  },
+  {
+    "file": "hurricane_anomaly_t1.20.png",
+    "state": {
+      "type": 3,
+      "seed": 7,
+      "time": 2.2,
+      "life": 0.5,
+      "anomaly": {
+        "elapsed": 1.2,
+        "epicenter": [
+          0.7,
+          0.48
+        ]
+      }
+    },
+    "cellIndexChecksum": 3301037899
+  },
+  {
+    "file": "hurricane_anomaly_t1.70.png",
+    "state": {
+      "type": 3,
+      "seed": 7,
+      "time": 2.2,
+      "life": 0.5,
+      "anomaly": {
+        "elapsed": 1.7,
+        "epicenter": [
+          0.7,
+          0.48
+        ]
+      }
+    },
+    "cellIndexChecksum": 1684853142
+  },
+  {
+    "file": "thunderstorm_anomaly_t0.40.png",
+    "state": {
+      "type": 0,
+      "seed": 7,
+      "time": 2.2,
+      "life": 0.5,
+      "anomaly": {
+        "elapsed": 0.4,
+        "epicenter": [
+          0.66,
+          0.5
+        ]
+      }
+    },
+    "cellIndexChecksum": 322874290
+  }
+]
