@@ -42,10 +42,10 @@ Other controls returned by `mount()`: `start()`, `stop()`, `restart()`, `setType
 - **cloud speed** — `setTimeScale(s)`: how fast the clouds churn. 1 = normal, 0 = frozen,
   5 = timelapse. Doesn't affect the song-synced lifecycle, only the texture motion.
 
-The demo's **SFERIC** button fires `storm.lightning()`: a lightning strike at a random spot — a
-leader races down, the return stroke flashes the sky, and it restrikes once or twice down the same
-branching channel, all inside half a second. Pressing again strikes anew. (A "sferic" is the radio
-crackle a real lightning strike gives off.)
+## The SFERIC button
+
+The demo's SFERIC button fires `storm.lightning()`: a lightning strike at a random spot. Pressing
+again strikes a new one.
 
 ## The anomaly button
 
