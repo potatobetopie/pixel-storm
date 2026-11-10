@@ -35,6 +35,13 @@ instead). `type` picks the storm: 0 Thunderstorm, 1 Supercell, 2 Squall line, 3 
 Other controls returned by `mount()`: `start()`, `stop()`, `restart()`, `setType(i)`,
 `setDuration(sec)`, `seek(sec)` (resync with the audio), `destroy()`.
 
+## The two sliders
+
+- **instability** — `setInstability(v)`, −1 to 1: recolors the same storm colder (blues) or hotter
+  (reds) without changing its shape. 0 = off.
+- **cloud speed** — `setTimeScale(s)`: how fast the clouds churn. 1 = normal, 0 = frozen,
+  5 = timelapse. Doesn't affect the song-synced lifecycle, only the texture motion.
+
 ## The anomaly button
 
 Wire the TXT button to `storm.anomaly()`. Each press runs one 2-second shockwave: a hot cell erupts
