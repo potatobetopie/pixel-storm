@@ -256,6 +256,7 @@ function hurricaneTrack(p) {
 // 6. Renderer
 // ---------------------------------------------------------------------------------------------
 const ANOMALY_SECONDS = 2;
+const LIGHTNING_SECONDS = 0.5;
 const ZCX = 2 / 3, ZCY = 0.5;            // camera zooms toward the middle of the 4:3 pattern field
 
 function create(opts) {
@@ -298,6 +299,51 @@ function create(opts) {
     const epi = an && an.epicenter ? an.epicenter : [ZCX, ZCY];
     const ringR = age * 0.55, ringW = 0.03 + 0.05 * age;
 
+    // lightning: { elapsed (s since the strike), x (pattern-space ground point), seed }. Stateless
+    // like the rest: channel, branches and stroke timing all rebuild identically every frame from
+    // (seed, x, elapsed). Sequence as in nature: a dim stepped leader races down for LT_LEAD
+    // seconds, the return stroke flashes the channel and the sky, then it restrikes once or twice
+    // down the same channel, each pulse dimmer. Branches light mainly with the first stroke.
+    const lt = st.lightning;
+    const ltElapsed = lt ? +lt.elapsed : Infinity;
+    const L = lt && ltElapsed < LIGHTNING_SECONDS ? 1 : 0;
+    const LT_N = 14, LT_LEAD = 0.07;
+    let ltNodes = null, ltBr = null, ltS = 0, ltEnv = 0, ltBrEnv = 0, ltFlash = 0, ltProg = 1;
+    if (L > 0) {
+      ltS = lt.seed | 0;
+      const tx = lt.x != null ? +lt.x : ZCX;
+      ltNodes = new Float64Array(LT_N + 1);               // main channel x per height step, top to bottom
+      let lx = tx + (hash(0, 97, ltS) - 0.5) * 0.1;
+      for (let i = 0; i <= LT_N; i++) {
+        ltNodes[i] = lx;
+        lx += (hash(i + 1, 131, ltS) - 0.5) * 0.09 + (tx - lx) * 0.2;   // jagged walk, pulled toward the strike point
+      }
+      ltBr = [];                                          // short forks leaving the channel at random heights
+      for (let b = 0; b < 3; b++) {
+        const s0 = 1 + Math.floor(hash(b, 229, ltS) * 9), len = 2 + Math.floor(hash(b, 241, ltS) * 3);
+        const dir = hash(b, 251, ltS) < 0.5 ? -1 : 1, xs = new Float64Array(len + 1);
+        let bx = ltNodes[s0];
+        for (let i = 0; i <= len; i++) { xs[i] = bx; bx += dir * (0.03 + 0.05 * hash(s0 + i, 263 + b, ltS)); }
+        ltBr.push({ f0: s0 / LT_N, f1: Math.min(1, (s0 + len) / LT_N), xs, len });
+      }
+      if (ltElapsed < LT_LEAD) {                          // stepped leader: dim, still racing down
+        ltProg = ltElapsed / LT_LEAD;
+        ltEnv = ltBrEnv = 0.25;
+      } else {
+        const nStk = hash(7, 211, ltS) < 0.45 ? 3 : 2;    // return stroke + 1-2 restrikes
+        let tk = LT_LEAD;
+        for (let k = 0; k < nStk; k++) {
+          if (ltElapsed >= tk) {
+            const s = Math.exp(-(ltElapsed - tk) / 0.045) * (k === 0 ? 1 : 0.6 - 0.12 * k);
+            if (s > ltEnv) ltEnv = s;
+            if (k === 0) ltBrEnv = s * 0.8;
+          }
+          tk += 0.11 + 0.07 * hash(k + 1, 223, ltS);
+        }
+        ltFlash = 0.22 * ltEnv * ltEnv;                   // the sky lights with every stroke
+      }
+    }
+
     for (let gy = 0; gy < gridH; gy++) {
       for (let gx = 0; gx < gridW; gx++) {
         const k = (gy * gridW + gx) * 3, kk = gy * gridW + gx;
@@ -312,6 +358,25 @@ function create(opts) {
           const ring = Math.exp(-Math.pow((dist - ringR) / ringW, 2)) * a * 0.55;
           const wake = dist < ringR ? -0.12 * a * (1 - dist / Math.max(ringR, 0.001)) : 0;
           I = clamp01(I + core + ring + wake + 0.08 * a * (hash(gx, gy, glitchFrame) - 0.5));
+        }
+        if (L > 0) {
+          const f = clamp01(uy);
+          let add = ltFlash;
+          if (f <= ltProg) {                              // the leader hasn't reached below ltProg yet
+            const g = Math.min(LT_N - 0.001, f * LT_N), i0 = g | 0;
+            const jit = (hash(Math.floor(f * 96), 157, ltS) - 0.5) * 0.012;   // small-scale kinks on the channel
+            const dx = ux - (ltNodes[i0] + (ltNodes[i0 + 1] - ltNodes[i0]) * (g - i0) + jit);
+            add += (Math.exp(-dx * dx / 0.00008) * 1.1 + Math.exp(-dx * dx / 0.0025) * 0.28) * ltEnv;
+            for (let b = 0; b < 3; b++) {
+              const br = ltBr[b];
+              if (f >= br.f0 && f < br.f1) {
+                const bt = (f - br.f0) / (br.f1 - br.f0), bg = bt * br.len, bi = bg | 0;
+                const bdx = ux - (br.xs[bi] + (br.xs[bi + 1] - br.xs[bi]) * (bg - bi));
+                add += Math.exp(-bdx * bdx / 0.00006) * 0.7 * (1 - 0.7 * bt) * ltBrEnv;   // thinner, fading toward the tip
+              }
+            }
+          }
+          I = clamp01(I + add);
         }
         if (ins) I = Math.pow(I, insExp);
         const b = bandAt(I), c = PAL[b];
@@ -350,6 +415,7 @@ function create(opts) {
 //    storm.setType(4); storm.setDuration(210); storm.restart(); storm.stop(); storm.start();
 //    storm.setLife(0.5); storm.setIntensity(0.8 | null); storm.setZoom(1.6 | null); storm.setTimeScale(3); storm.setSeed(12);
 //    storm.setInstability(0.5);                           // -1 stable/cold .. 1 unstable/hot, 0 = off
+//    storm.lightning();                                   // one half-second bolt at a random spot
 //    Options:
 //      type      0 Thunderstorm, 1 Supercell, 2 Squall line, 3 Hurricane, 4 Blizzard, 5 Dust storm   (default 3)
 //      duration  seconds for the whole storm life, calm -> peak -> remnants. Set it to the song length. (default 150)
@@ -374,6 +440,7 @@ function mount(target, opts) {
   let type = opts.type == null ? 3 : opts.type | 0, seed = opts.seed == null ? 7 : opts.seed | 0;
   let duration = opts.duration > 0 ? +opts.duration : LIFE_SECONDS;
   let time = 2.2, life = 0, pressedAt = -Infinity, epicenter = null, raf = 0, last = 0, running = false, ended = false;
+  let ltAt = -Infinity, ltX = ZCX, ltSeed = 0;
   let intensityOv = null, zoomOv = null, timeScale = 1, instabilityOv = 0;
   function frame(now) {
     if (!running) return;
@@ -390,7 +457,9 @@ function mount(target, opts) {
     const p = Math.min(0.9999, life / duration);
     const elapsed = now / 1000 - pressedAt;
     const an = elapsed < ANOMALY_SECONDS ? { elapsed, epicenter } : null;
-    r.render({ type, seed, time, life: p, anomaly: an, intensity: intensityOv, zoom: zoomOv, instability: instabilityOv });
+    const ltE = now / 1000 - ltAt;
+    const lt = ltE < LIGHTNING_SECONDS ? { elapsed: ltE, x: ltX, seed: ltSeed } : null;
+    r.render({ type, seed, time, life: p, anomaly: an, lightning: lt, intensity: intensityOv, zoom: zoomOv, instability: instabilityOv });
     ctx.putImageData(img, 0, 0);
     const sh = r.shake(an);
     canvas.style.transform = sh[0] || sh[1] ? 'translate(' + sh[0].toFixed(1) + 'px,' + sh[1].toFixed(1) + 'px)' : '';
@@ -412,6 +481,12 @@ function mount(target, opts) {
       epicenter = [ZCX + (Math.random() - 0.5) * 0.3, ZCY + (Math.random() - 0.5) * 0.2];
       return true;
     },
+    lightning() {                                         // one bolt at a random spot; pressing again restrikes
+      ltAt = performance.now() / 1000;
+      ltX = ZCX + (Math.random() - 0.5) * 0.35;
+      ltSeed = (Math.random() * 1e9) | 0;
+      return api;
+    },
     setType(i) { type = ((i % TYPES.length) + TYPES.length) % TYPES.length; reset(); return api; },
     getType() { return type; },
     setLife(p) { life = Math.max(0, Math.min(0.9999, p)) * duration; ended = false; return api; },   // jump to a point, 0..1
@@ -429,6 +504,6 @@ const FRAME_DT = 0.066;
 
 return {
   create, mount, TYPES, PAL, CUTS, ART, bandAt, lifeCurve, lifeZoom, phaseName, hurricaneTrack,
-  LIFE_SECONDS, ANOMALY_SECONDS, FRAME_DT
+  LIFE_SECONDS, ANOMALY_SECONDS, LIGHTNING_SECONDS, FRAME_DT
 };
 });
