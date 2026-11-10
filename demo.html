@@ -5,7 +5,11 @@
   body { background: #0d1630; color: #e8f4f3; font: 14px system-ui, sans-serif; margin: 24px; }
   #storm { width: 768px; max-width: 100%; border: 2px solid #e8f4f3; margin-bottom: 12px; }
   button, select, input { font: inherit; padding: 6px 10px; margin-right: 8px; }
-  input { width: 5em; }
+  input[type=number] { width: 5em; }
+  #sliders { margin-top: 14px; display: grid; grid-template-columns: max-content 230px max-content; gap: 8px 12px; align-items: center; max-width: 768px; }
+  #sliders input { margin: 0; padding: 0; }
+  #sliders input[type=range] { width: 100%; }
+  #sliders label { display: flex; align-items: center; gap: 4px; }
 </style>
 <p>demo: <code>storm-heatmap.js</code>, anomaly = pressing the "TXT" button</p>
 <div id="storm"></div>
@@ -17,17 +21,24 @@
 <button id="restart">Restart</button>
 <button id="txt">TXT</button>
 <span id="info"></span>
+<div id="sliders">
+  <span>instability</span><input id="instability" type="range" min="-1" max="1" step="0.05" value="0"><span id="instabilityVal">0</span>
+  <span>cloud speed</span><input id="speed" type="range" min="0" max="5" step="0.1" value="1"><span id="speedVal">1.0x</span>
+</div>
 <script src="storm-heatmap.js"></script>
 <script>
 // Everything needed to put the animation in a div. duration = the song's length in seconds.
+const $ = id => document.getElementById(id);
 const storm = StormHeatmap.mount('#storm', {
   type: 3,
   duration: 150,
-  onFrame: (p, phase, type, sec) => { document.getElementById('info').textContent = phase + ' · ' + Math.round(sec) + 's / ' + storm.getDuration() + 's'; },
-  onEnd: () => { document.getElementById('info').textContent += ' · ended'; }
+  onFrame: (p, phase, type, sec) => { $('info').textContent = phase + ' · ' + Math.round(sec) + 's / ' + storm.getDuration() + 's'; },
+  onEnd: () => { $('info').textContent += ' · ended'; }
 });
-document.getElementById('txt').onclick = () => storm.anomaly();
-document.getElementById('type').onchange = e => storm.setType(+e.target.value);
-document.getElementById('duration').onchange = e => storm.setDuration(+e.target.value);
-document.getElementById('restart').onclick = () => storm.restart();
+$('txt').onclick = () => storm.anomaly();
+$('type').onchange = e => storm.setType(+e.target.value);
+$('duration').onchange = e => storm.setDuration(+e.target.value);
+$('restart').onclick = () => storm.restart();
+$('instability').oninput = e => { const v = +e.target.value; storm.setInstability(v); $('instabilityVal').textContent = v === 0 ? '0' : (v > 0 ? '+' : '') + v.toFixed(2); };
+$('speed').oninput = e => { storm.setTimeScale(+e.target.value); $('speedVal').textContent = (+e.target.value).toFixed(1) + 'x'; };
 </script>

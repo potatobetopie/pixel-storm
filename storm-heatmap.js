@@ -283,6 +283,11 @@ function create(opts) {
     const panX = st.pan ? st.pan[0] : 0.02 * Math.sin(time * 0.11);
     const panY = st.pan ? st.pan[1] : 0.012 * Math.cos(time * 0.08);
 
+    // instability: -1 stable/cold .. 1 unstable/hot. Gamma on the intensity, so empty sky (0) and
+    // peak cores (1) stay put while everything between slides toward the hot or cold bands.
+    const ins = st.instability ? Math.max(-1, Math.min(1, +st.instability)) : 0;
+    const insExp = ins ? Math.pow(2, -1.5 * ins) : 1;
+
     // anomaly (shockwave): { elapsed (seconds since the trigger), epicenter [ux, uy] }
     // a: strength, 1 at the trigger, fading to 0 by ANOMALY_SECONDS. age = 1 - a drives the ring outward.
     const an = st.anomaly;
@@ -308,6 +313,7 @@ function create(opts) {
           const wake = dist < ringR ? -0.12 * a * (1 - dist / Math.max(ringR, 0.001)) : 0;
           I = clamp01(I + core + ring + wake + 0.08 * a * (hash(gx, gy, glitchFrame) - 0.5));
         }
+        if (ins) I = Math.pow(I, insExp);
         const b = bandAt(I), c = PAL[b];
         cellIndex[kk] = b;
         cells[k] = c[0]; cells[k + 1] = c[1]; cells[k + 2] = c[2];
@@ -342,6 +348,8 @@ function create(opts) {
 //    const storm = StormHeatmap.mount('#my-div', { type: 3, duration: 187 });   // duration = the song's length in seconds
 //    storm.anomaly();                                     // one shockwave (ignored while one is running)
 //    storm.setType(4); storm.setDuration(210); storm.restart(); storm.stop(); storm.start();
+//    storm.setLife(0.5); storm.setIntensity(0.8 | null); storm.setZoom(1.6 | null); storm.setTimeScale(3); storm.setSeed(12);
+//    storm.setInstability(0.5);                           // -1 stable/cold .. 1 unstable/hot, 0 = off
 //    Options:
 //      type      0 Thunderstorm, 1 Supercell, 2 Squall line, 3 Hurricane, 4 Blizzard, 5 Dust storm   (default 3)
 //      duration  seconds for the whole storm life, calm -> peak -> remnants. Set it to the song length. (default 150)
@@ -365,30 +373,31 @@ function mount(target, opts) {
   const frameMs = 1000 / (opts.fps || 15);
   let type = opts.type == null ? 3 : opts.type | 0, seed = opts.seed == null ? 7 : opts.seed | 0;
   let duration = opts.duration > 0 ? +opts.duration : LIFE_SECONDS;
-  let time = 2.2, timeBase = 2.2, life = 0, pressedAt = -Infinity, epicenter = null, raf = 0, last = 0, running = false, ended = false;
+  let time = 2.2, life = 0, pressedAt = -Infinity, epicenter = null, raf = 0, last = 0, running = false, ended = false;
+  let intensityOv = null, zoomOv = null, timeScale = 1, instabilityOv = 0;
   function frame(now) {
     if (!running) return;
     raf = requestAnimationFrame(frame);
     if (now - last < frameMs) return;
     last = now;
-    if (!ended) life += (now - (lastTick || now)) / 1000;   // real elapsed time, so the life tracks the song's clock
+    const dt = (now - (lastTick || now)) / 1000;            // real elapsed time, so the life tracks the song's clock
     lastTick = now;
+    if (!ended) { life += dt; time += dt * 0.35 * timeScale; }   // clouds evolve at 35% of wall-clock, times the speed slider
     if (life >= duration) {
-      if (opts.loop) { life = 0; timeBase = time; seed = (seed * 31 + 11) % 997; type = (type + 1) % TYPES.length; }
+      if (opts.loop) { life = 0; seed = (seed * 31 + 11) % 997; type = (type + 1) % TYPES.length; }
       else if (!ended) { ended = true; life = duration; if (opts.onEnd) opts.onEnd(type); }
     }
     const p = Math.min(0.9999, life / duration);
-    time = timeBase + p * duration * 0.35;
     const elapsed = now / 1000 - pressedAt;
     const an = elapsed < ANOMALY_SECONDS ? { elapsed, epicenter } : null;
-    r.render({ type, seed, time, life: p, anomaly: an });
+    r.render({ type, seed, time, life: p, anomaly: an, intensity: intensityOv, zoom: zoomOv, instability: instabilityOv });
     ctx.putImageData(img, 0, 0);
     const sh = r.shake(an);
     canvas.style.transform = sh[0] || sh[1] ? 'translate(' + sh[0].toFixed(1) + 'px,' + sh[1].toFixed(1) + 'px)' : '';
     if (opts.onFrame) opts.onFrame(p, phaseName(p), type, life);
   }
   let lastTick = 0;
-  function reset() { life = 0; ended = false; timeBase = time; lastTick = 0; }
+  function reset() { life = 0; ended = false; lastTick = 0; }
   const api = {
     canvas, renderer: r,
     start() { if (!running) { running = true; last = 0; lastTick = 0; raf = requestAnimationFrame(frame); } return api; },
@@ -407,6 +416,11 @@ function mount(target, opts) {
     getType() { return type; },
     setLife(p) { life = Math.max(0, Math.min(0.9999, p)) * duration; ended = false; return api; },   // jump to a point, 0..1
     seek(sec) { return api.setLife(sec / duration); },                                               // jump to a time in seconds
+    setIntensity(v) { intensityOv = v == null ? null : clamp01(+v); return api; },    // null = back to the life curve
+    setZoom(z) { zoomOv = z == null ? null : +z; return api; },                       // null = back to the life zoom
+    setTimeScale(s) { timeScale = Math.max(0, +s) || 0; return api; },                // cloud-clock speed, 1 = normal
+    setInstability(v) { instabilityOv = Math.max(-1, Math.min(1, +v)) || 0; return api; },   // -1 stable/cold .. 1 unstable/hot, 0 = off
+    setSeed(i) { seed = i | 0; return api; },
     destroy() { api.stop(); canvas.remove(); }
   };
   return opts.autoplay === false ? api : api.start();
